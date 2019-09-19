@@ -1,13 +1,16 @@
 #pragma once
 #include <cstddef>
 
-enum class Nucleotide {
+enum class Nucleotide: unsigned char {
 	A, G, C, T
 };
 
 class RNA {
-	// interface functions
-	friend bool isComplementary(const RNA &, const RNA &);
+	// friend functions
+	friend bool IsComplementary(const RNA &, const RNA &);
+	friend bool operator==(const RNA &, const RNA &);
+	friend bool operator!=(const RNA &, const RNA &);
+	friend RNA operator+(const RNA &, const RNA &);
 private:
 	// fields
 	static constexpr std::size_t allocRate = 2;
@@ -17,10 +20,10 @@ private:
 public:
 	// constructors
 	RNA() = default;
-	RNA(std::size_t nuclCount, Nucleotide) {}
-	RNA(const RNA &) {}
+	RNA(std::size_t nuclCount, Nucleotide);
+	RNA(const RNA &);
 	// destructor
-	~RNA() {}
+	~RNA();
 	// methods
 	RNA &add(Nucleotide);
 	RNA &add(std::size_t nuclCount, Nucleotide);
@@ -29,15 +32,12 @@ public:
 	std::size_t capacity() const { return arrLength * 4 - rnaLength; }
 	std::size_t length() const { return rnaLength; }
 	void trim(std::size_t lastIndex);
-	// split(std::size_t index);
+	void split(std::size_t index);
 	// operators
-	bool operator==(const RNA &) const;
-	bool operator!=(const RNA &) const;
 	RNA operator!() const;
-	RNA operator+(const RNA &) const;
 	RNA &operator=(const RNA &);
 	RNA &operator+=(const RNA &);
 };
 
-bool isComplementary(const RNA &, const RNA &);
+bool IsComplementary(const RNA &, const RNA &);
 Nucleotide ComplementaryTo(Nucleotide nucl);

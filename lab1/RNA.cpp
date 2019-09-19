@@ -3,9 +3,9 @@
 #include <math.h> 
 // utility functions
 
-void CopyCharArray(unsigned char *arr1, unsigned char *arr2, std::size_t arrLength) {
+void CopyCharArray(unsigned char *firstArr, unsigned char *secondArr, std::size_t arrLength) {
 	for (decltype(arrLength) i = 0; i < arrLength; ++i) {
-		arr1[i] = arr2[i];
+		firstArr[i] = secondArr[i];
 	}
 }
 
@@ -36,7 +36,7 @@ Nucleotide CharToNucl(unsigned char val) {
 	case 3u:
 		return Nucleotide::T;
 	default:
-		std::cerr << "function charToNucl() error: wrong value";
+		std::cerr << "function charToNucl() error: wrong value" << std::endl;
 		return Nucleotide::A;
 	}
 }
@@ -91,9 +91,6 @@ RNA &RNA::add(Nucleotide nucl) {
 }
 
 RNA &RNA::add(std::size_t nuclCount, Nucleotide nucl) {
-	std::size_t lastIndex = rnaLength - 1;
-	std::size_t lastByteNum = lastIndex / 4;
-	unsigned int lastNuclNumInByte = lastIndex % 4u;
 	for (std::size_t i = 0; i < nuclCount; ++i) {
 		add(nucl);
 	}
@@ -102,7 +99,7 @@ RNA &RNA::add(std::size_t nuclCount, Nucleotide nucl) {
 
 Nucleotide RNA::get(std::size_t index) const {
 	if (index >= rnaLength) {
-		std::cerr << "member function RNA::get() error: wrong index";
+		std::cerr << "member function RNA::get() error: wrong index" << std::endl;
 		return Nucleotide::A;
 	}
 	std::size_t byteNum = index / 4;
@@ -145,35 +142,45 @@ RNA &RNA::set(std::size_t index, Nucleotide nucl) {
 }
 
 void RNA::trim(std::size_t lastIndex) {
-	rnaLength = lastIndex;
-	std::size_t byteNum = lastIndex / 4;
-	unsigned int nuclNumInByte = static_cast<unsigned int>(lastIndex % 4u);
+	std::size_t lastByteNum = lastIndex / 4;
+	if (lastByteNum >= arrLength) {
+		return;
+	}
+	if (lastIndex < rnaLength) {
+		rnaLength = lastIndex + 1;
+	}
+	delete[](arr + lastByteNum + 1);
+	arrLength = lastByteNum + 1;
+}
+
+void RNA::split(std::size_t index) {
 
 }
 
 // operators
-bool RNA::operator==(const RNA &rna) const {
-	if (length() != rna.length()) { return false; }
-	std::size_t usedArrLength = rnaLength / 4;
+
+bool operator==(const RNA &firstRNA, const RNA &secondRNA) {
+	if (firstRNA.rnaLength != secondRNA.rnaLength) { return false; }
+	std::size_t usedArrLength = firstRNA.rnaLength / 4;
 	for (std::size_t i = 0; i < usedArrLength; ++i) {
-		if (arr[i] != rna.arr[i]) {
+		if (firstRNA.arr[i] != secondRNA.arr[i]) {
 			return false;
 		}
 	}
-	if (rnaLength % 4 != 0) {
-		unsigned int lastByteNuclCount = rnaLength % 4;
+	if (firstRNA.rnaLength % 4 != 0) {
+		unsigned int lastByteNuclCount = firstRNA.rnaLength % 4;
 		for (unsigned int i = 0; i < lastByteNuclCount; ++i) {
-			if (get(rnaLength - i - 1) != rna.get(rnaLength - i - 1)) {
+			if (firstRNA.get(firstRNA.rnaLength - i - 1) != secondRNA.get(secondRNA.rnaLength - i - 1)) {
 				return false;
 			}
 		}
 	}
 	return true;
-}
+} 
 
-bool RNA::operator!=(const RNA &rna) const {
-	return !(*this == rna);
-}
+bool operator!=(const RNA &firstRNA, const RNA &secondRNA) {
+	return !(firstRNA == secondRNA);
+} 
 
 RNA RNA::operator!() const {
 	RNA complemRNA(*this);
@@ -189,9 +196,9 @@ RNA &RNA::operator+=(const RNA &rna) {
 	}
 }
 
-RNA RNA::operator+(const RNA &rna) const {
-	RNA newRNA(*this);
-	newRNA += rna;
+RNA operator+(const RNA &firstRNA, const RNA &secondRNA) {
+	RNA newRNA(firstRNA);
+	newRNA += secondRNA;
 	return newRNA;
 }
 
@@ -239,7 +246,7 @@ bool IsComplementary(const RNA &firstRNA, const RNA &secondRNA) {
 	int lastByteNuclCount = firstRNA.rnaLength % 4;
 	if (lastByteNuclCount != 0) {
 		for (int i = 0; i < lastByteNuclCount; ++i) {
-			if (firstRNA.get(firstRNA.rnaLength - i - 1) != ~secondRNA.get(secondRNA.rnaLength - i - 1)) {
+			if (firstRNA.get(firstRNA.rnaLength - i - 1) != ComplementaryTo(secondRNA.get(secondRNA.rnaLength - i - 1))) {
 				return false;
 			}
 		}
