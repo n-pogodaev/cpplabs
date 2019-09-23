@@ -1,0 +1,5 @@
+project(Google_tests)
+add_subdirectory(lib)
+add_executable(TestRNA ../main.cpp ../RNA.cpp ../RNA.h tests.cpp)
+include_directories(googletest/include googletest)
+target_link_libraries(TestRNA gtest gtest_main)
