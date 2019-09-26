@@ -8,8 +8,8 @@ void CopyCharArray(unsigned char *firstArr, const unsigned char *secondArr, std:
     }
 }
 
-unsigned char NuclToChar(Nucleotide nucl) {
-    switch (nucl) {
+unsigned char NuclToChar(Nucleotide value) {
+    switch (value) {
         case Nucleotide::A:
             return 0u;
         case Nucleotide::G:
@@ -23,8 +23,8 @@ unsigned char NuclToChar(Nucleotide nucl) {
     }
 }
 
-Nucleotide CharToNucl(unsigned char val) {
-    switch (val)
+Nucleotide CharToNucl(unsigned char value) {
+    switch (value)
     {
         case 0u:
             return Nucleotide::A;
@@ -40,8 +40,8 @@ Nucleotide CharToNucl(unsigned char val) {
     }
 }
 
-unsigned char GetCharFilledWithNucl(Nucleotide nucl) {
-    switch (nucl)
+unsigned char GetCharFilledWithNucl(Nucleotide value) {
+    switch (value)
     {
         case Nucleotide::A:
             return 0u; //0000_0000
@@ -61,12 +61,12 @@ RNA::~RNA() {
     delete[] arr;
 }
 
-RNA::RNA(std::size_t nuclCount, Nucleotide nucl): rnaLength(nuclCount), arrLength(nuclCount / 4) {
+RNA::RNA(std::size_t nuclCount, Nucleotide value): rnaLength(nuclCount), arrLength(nuclCount / 4) {
     if (rnaLength % 4 != 0) {
         ++arrLength;
     }
     arr = new unsigned char[arrLength];
-    unsigned char initValue = GetCharFilledWithNucl(nucl);
+    unsigned char initValue = GetCharFilledWithNucl(value);
     for (std::size_t i = 0; i < arrLength; ++i) {
         arr[i] = initValue;
     }
@@ -84,58 +84,14 @@ RNA::RNA(const RNA &rna): rnaLength(rna.rnaLength), arrLength(rna.rnaLength / 4)
 
 // class methods
 
-RNA &RNA::add(Nucleotide nucl) {
-    set(rnaLength, nucl);
+RNA &RNA::add(Nucleotide value) {
+    operator[](rnaLength) = value;
     return *this;
 }
 
-RNA &RNA::add(std::size_t nuclCount, Nucleotide nucl) {
+RNA &RNA::add(std::size_t nuclCount, Nucleotide value) {
     for (std::size_t i = 0; i < nuclCount; ++i) {
-        add(nucl);
-    }
-    return *this;
-}
-
-Nucleotide RNA::get(std::size_t index) const {
-    if (index >= rnaLength) {
-        std::cerr << "member function RNA::get() error: wrong index" << std::endl;
-        return Nucleotide::A;
-    }
-    std::size_t byteNum = index / 4;
-    unsigned int shift = (3 - index % 4) * 2;
-    unsigned char nuclCharValue = (0x03u << shift & arr[byteNum]) >> shift;
-    return CharToNucl(nuclCharValue);
-}
-
-RNA &RNA::set(std::size_t index, Nucleotide nucl) {
-    std::size_t byteNum = index / 4;
-    unsigned int nuclNumInByte = index % 4;
-    if (arrLength < byteNum + 1) {
-        std::size_t usedArrLength = rnaLength / 4;
-        if (index % 4 != 0) ++usedArrLength;
-        auto *t = new unsigned char[usedArrLength];
-        CopyCharArray(t, arr, usedArrLength);
-        delete[] arr;
-        std::size_t newArrLength = (byteNum + 1) * allocRate;
-        arr = new unsigned char[newArrLength];
-        arrLength = newArrLength;
-        CopyCharArray(arr, t, usedArrLength);
-        rnaLength = index + 1;
-    }
-    if ((NuclToChar(nucl) & 0x01u) == 0u) {
-        arr[byteNum] &= static_cast<unsigned char>(~(0x01u << (3 - nuclNumInByte) * 2));
-    }
-    else {
-        arr[byteNum] |= static_cast<unsigned char>(0x01u << (3 - nuclNumInByte) * 2);
-    }
-    if ((NuclToChar(nucl) & 0x03u) == 0u) {
-        arr[byteNum] &= static_cast<unsigned char>(~(0x03u << (3 - nuclNumInByte) * 2));
-    }
-    else {
-        arr[byteNum] |= static_cast <unsigned char>(0x03u << (3 - nuclNumInByte) * 2);
-    }
-    if (rnaLength < index + 1) {
-        rnaLength = index + 1;
+        add(value);
     }
     return *this;
 }
@@ -156,6 +112,25 @@ void RNA::split(std::size_t index) {
 
 }
 
+std::size_t RNA::cardinality(Nucleotide value) const {
+    size_t result = 0;
+    for (std::size_t i = 0; i < rnaLength; ++i) {
+        if (operator[](i) == value) {
+            ++result;
+        }
+    }
+    return result;
+}
+
+RNA::NucleotideUnorderedMap RNA::cardinality() const {
+    NucleotideUnorderedMap result;
+    result[Nucleotide::A] = cardinality(Nucleotide::A);
+    result[Nucleotide::G] = cardinality(Nucleotide::G);
+    result[Nucleotide::C] = cardinality(Nucleotide::C);
+    result[Nucleotide::T] = cardinality(Nucleotide::T);
+    return result;
+}
+
 // operators
 
 bool operator==(const RNA &firstRNA, const RNA &secondRNA) {
@@ -169,7 +144,7 @@ bool operator==(const RNA &firstRNA, const RNA &secondRNA) {
     if (firstRNA.rnaLength % 4 != 0) {
         unsigned int lastByteNuclCount = firstRNA.rnaLength % 4;
         for (unsigned int i = 0; i < lastByteNuclCount; ++i) {
-            if (firstRNA.get(firstRNA.rnaLength - i - 1) != secondRNA.get(secondRNA.rnaLength - i - 1)) {
+            if (firstRNA[firstRNA.rnaLength - i - 1] != secondRNA[secondRNA.rnaLength - i - 1]) {
                 return false;
             }
         }
@@ -191,7 +166,7 @@ RNA RNA::operator!() const {
 
 RNA &RNA::operator+=(const RNA &rna) {
     for (std::size_t i = 0; i < rna.rnaLength; ++i) {
-        add(rna.get(i));
+        add(rna[i]);
     }
     return *this;
 }
@@ -216,6 +191,59 @@ RNA &RNA::operator=(const RNA &rna) {
     for (std::size_t i = 0; i < rnaUsedArrLength; ++i) {
         arr[i] = rna.arr[i];
     }
+    return *this;
+}
+
+Nucleotide RNA::operator[](std::size_t index) const {
+    if (index >= rnaLength) {
+        std::cerr << "member function RNA::get() error: wrong index" << std::endl;
+        return Nucleotide::A;
+    }
+    unsigned int shift = (3 - index % 4) * 2;
+    unsigned char nuclCharValue = (0x03u << shift & arr[index / 4]) >> shift;
+    return CharToNucl(nuclCharValue);
+}
+
+RNA::reference RNA::operator[](std::size_t index) {
+    std::size_t byteNum = index / 4;
+    unsigned int nuclNumInByte = index % 4;
+    if (arrLength < byteNum + 1) {
+        std::size_t usedArrLength = rnaLength / 4;
+        if (index % 4 != 0) ++usedArrLength;
+        auto *t = new unsigned char[usedArrLength];
+        CopyCharArray(t, arr, usedArrLength);
+        delete[] arr;
+        std::size_t newArrLength = (byteNum + 1) * allocRate;
+        arr = new unsigned char[newArrLength];
+        arrLength = newArrLength;
+        CopyCharArray(arr, t, usedArrLength);
+        rnaLength = index + 1;
+    }
+    if (rnaLength < index + 1) {
+        rnaLength = index + 1;
+    }
+    return reference(&arr[byteNum], nuclNumInByte);
+}
+
+RNA::reference &RNA::reference::operator=(Nucleotide value) {
+    if ((NuclToChar(value) & 0x01u) == 0u) {
+        *pointer &= static_cast<unsigned char>(~(0x01u << (3 - index) * 2));
+    }
+    else {
+        *pointer |= static_cast<unsigned char>(0x01u << (3 - index) * 2);
+    }
+    if ((NuclToChar(value) & 0x03u) == 0u) {
+        *pointer &= static_cast<unsigned char>(~(0x03u << (3 - index) * 2));
+    }
+    else {
+        *pointer |= static_cast <unsigned char>(0x03u << (3 - index) * 2);
+    }
+    return *this;
+}
+
+RNA::reference &RNA::reference::operator=(const RNA::reference &ref) {
+    unsigned int shift = (3 - ref.index) * 2;
+    *this = CharToNucl((0x03u << shift & *ref.pointer) >> shift);
     return *this;
 }
 
@@ -246,7 +274,7 @@ bool IsComplementary(const RNA &firstRNA, const RNA &secondRNA) {
     unsigned int lastByteNuclCount = firstRNA.rnaLength % 4;
     if (lastByteNuclCount != 0) {
         for (unsigned int i = 0; i < lastByteNuclCount; ++i) {
-            if (firstRNA.get(firstRNA.rnaLength - i - 1) != ComplementaryTo(secondRNA.get(secondRNA.rnaLength - i - 1))) {
+            if (firstRNA[firstRNA.rnaLength - i - 1] != ComplementaryTo(secondRNA[secondRNA.rnaLength - i - 1])) {
                 return false;
             }
         }
