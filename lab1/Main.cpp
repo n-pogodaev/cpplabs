@@ -1,5 +1,5 @@
-//#include "gtest/gtest.h"
+#include "gtest/gtest.h"
 
 int main() {
-    //return RUN_ALL_TESTS();
+    return RUN_ALL_TESTS();
 }

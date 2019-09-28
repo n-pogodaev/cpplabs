@@ -2,10 +2,6 @@
 #include <cstddef>
 #include <unordered_map>
 
-enum class Nucleotide: unsigned char {
-    A, G, C, T
-};
-
 class RNA {
     // friend functions
     friend bool IsComplementary(const RNA &, const RNA &);
@@ -19,7 +15,10 @@ private:
     std::size_t arrLength = 0;
     unsigned char *arr = nullptr;
 public:
-    using NucleotideUnorderedMap = std::unordered_map<Nucleotide, std::size_t, std::hash<Nucleotide>>;
+    enum class Nucleotide: unsigned char {
+        A, G, C, T
+    };
+    using NucleotideUnorderedMap = std::unordered_map<Nucleotide, std::size_t>;
     // constructors
     RNA() = default;
     RNA(std::size_t nuclCount, Nucleotide);
@@ -32,7 +31,7 @@ public:
     [[nodiscard]] std::size_t capacity() const { return arrLength * 4 - rnaLength; }
     [[nodiscard]] std::size_t length() const { return rnaLength; }
     void trim(std::size_t lastIndex);
-    void split(std::size_t index);
+    [[nodiscard]] RNA split(std::size_t index);
     [[nodiscard]] std::size_t cardinality(Nucleotide) const;
     [[nodiscard]] NucleotideUnorderedMap cardinality() const;
     // reference class
@@ -56,4 +55,4 @@ public:
 };
 
 bool IsComplementary(const RNA &, const RNA &);
-Nucleotide ComplementaryTo(Nucleotide);
+RNA::Nucleotide ComplementaryTo(RNA::Nucleotide);
