@@ -67,10 +67,7 @@ RNA::RNA(std::size_t nuclCount, Nucleotide value): rnaLength(nuclCount), arrLeng
     }
 }
 
-RNA::RNA(const RNA &rna): rnaLength(rna.rnaLength), arrLength(rna.rnaLength / 4) {
-    if (rnaLength % 4 != 0) {
-        ++arrLength;
-    }
+RNA::RNA(const RNA &rna): rnaLength(rna.rnaLength), arrLength(rna.arrLength) {
     arr = new unsigned char[arrLength];
     for (std::size_t i = 0; i < arrLength; ++i) {
         arr[i] = rna.arr[i];
@@ -245,6 +242,11 @@ RNA::reference &RNA::reference::operator=(const RNA::reference &ref) {
     unsigned int shift = (3 - ref.index) * 2;
     *this = CharToNucl((0x03u << shift & *ref.pointer) >> shift);
     return *this;
+}
+
+RNA::reference::operator RNA::Nucleotide() const {
+    unsigned int shift = (3 - (*this).index) * 2;
+    return CharToNucl((0x03u << shift & *(*this).pointer) >> shift);
 }
 
 // interface functions

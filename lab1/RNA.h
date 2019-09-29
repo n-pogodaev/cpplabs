@@ -28,7 +28,7 @@ public:
     // methods
     RNA &add(Nucleotide);
     RNA &add(std::size_t nuclCount, Nucleotide);
-    [[nodiscard]] std::size_t capacity() const { return arrLength * 4 - rnaLength; }
+    [[nodiscard]] std::size_t capacity() const { return arrLength; }
     [[nodiscard]] std::size_t length() const { return rnaLength; }
     void trim(std::size_t lastIndex);
     [[nodiscard]] RNA split(std::size_t index);
@@ -45,12 +45,13 @@ public:
         ~reference() = default;
         reference &operator=(Nucleotide);
         reference &operator=(const reference &);
+        operator RNA::Nucleotide() const;
     };
     // operators
     RNA operator!() const;
     RNA &operator=(const RNA &);
     RNA &operator+=(const RNA &);
-    [[nodiscard]] Nucleotide operator[](std::size_t) const;
+    [[nodiscard]] Nucleotide operator[](std::size_t) const; // tested
     RNA::reference operator[](std::size_t index);
 };
 
