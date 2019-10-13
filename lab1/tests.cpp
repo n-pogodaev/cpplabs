@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "../RNA.h"
+#include "RNA.h"
 
 TEST(TestCaseRNA, TestConstIndexOperator) {
     const RNA rna1(10, RNA::Nucleotide::A);
@@ -8,25 +8,27 @@ TEST(TestCaseRNA, TestConstIndexOperator) {
     RNA rna2(10, RNA::Nucleotide::A);
     ASSERT_TRUE(rna2[0] == RNA::Nucleotide::A);
     ASSERT_TRUE(rna2[9] == RNA::Nucleotide::A);
-
     ASSERT_TRUE(rna1[5] == rna2[7]);
 }
 
 TEST(TestCaseRNA, TestIndexOperator) {
     RNA rna1(10, RNA::Nucleotide::A);
     RNA rna2(10, RNA::Nucleotide::G);
+    std::size_t allocLength1 = rna1.capacity();
+    std::size_t allocLength2 = rna2.capacity();
     rna1[5] = RNA::Nucleotide::T;
     ASSERT_TRUE(rna1[5] == RNA::Nucleotide::T);
+    ASSERT_TRUE(rna1.length() == 10);
+    ASSERT_TRUE(rna1.capacity() == allocLength1);
+    rna1[10] = RNA::Nucleotide::A;
+    ASSERT_TRUE(rna1.length() == 11);
+    ASSERT_TRUE(rna1.capacity() >= allocLength1);
+    ASSERT_TRUE(rna1[10] == RNA::Nucleotide::A);
+    rna2[11] = RNA::Nucleotide::A;
+    ASSERT_TRUE(rna2.length() == 10);
+    ASSERT_TRUE(rna2.capacity() == allocLength2);
     rna1[0] = rna2[0];
     ASSERT_TRUE(rna1[0] == RNA::Nucleotide::G);
-
-    rna1[1'000'000'000] = RNA::Nucleotide::A;
-    ASSERT_TRUE(rna1.length() == 1'000'000'000ull);
-    ASSERT_TRUE(rna1.capacity() > rna2.capacity());
-    ASSERT_TRUE(rna1.capacity() >= 1'000'000'000ull * 2 / 8);
-    ASSERT_TRUE(rna1[0] == RNA::Nucleotide::G);
-    ASSERT_TRUE(rna1[5] == RNA::Nucleotide::T);
-    ASSERT_TRUE(rna1[1'000'000'000] == RNA::Nucleotide::A);
 }
 
 TEST(TestCaseRNA, TestEqOperator) {
@@ -89,14 +91,16 @@ TEST(TestCaseRNA, TestSumOperator) {
 }
 
 TEST(TestCaseRNA, TestIsComplementary) {
-    RNA rna1(10, RNA::Nucleotide::A);
-    RNA rna2(10, ComplementaryTo(RNA::Nucleotide::A));
+    RNA rna1(5, RNA::Nucleotide::A);
+    rna1 += RNA(5, RNA::Nucleotide::G);
+    RNA rna2(5, ComplementaryTo(RNA::Nucleotide::A));
+    rna2 += RNA(5, ComplementaryTo(RNA::Nucleotide::G));
     RNA rna3(5, ComplementaryTo(RNA::Nucleotide::A));
     ASSERT_TRUE(IsComplementary(rna1, rna2));
     ASSERT_FALSE(IsComplementary(rna1, rna3));
     ASSERT_FALSE(IsComplementary(rna1, rna1));
-    rna1[3] = RNA::Nucleotide::G;
-    rna2[3] = ComplementaryTo(RNA::Nucleotide::G);
+    rna1[3] = RNA::Nucleotide::C;
+    rna2[3] = ComplementaryTo(RNA::Nucleotide::C);
     ASSERT_TRUE(IsComplementary(rna1, rna2));
 }
 
@@ -113,9 +117,10 @@ TEST(TestCaseRNA, TestAddMethod) {
 }
 
 TEST(TestCaseRNA, TestNotOperator) {
-    RNA rna1(10, RNA::Nucleotide::A);
+    RNA rna1(5, RNA::Nucleotide::A);
+    rna1 += RNA(5, RNA::Nucleotide::G);
     ASSERT_TRUE(IsComplementary(rna1, !rna1));
-    rna1[5] = RNA::Nucleotide::G;
+    rna1[2] = RNA::Nucleotide::C;
     ASSERT_TRUE(IsComplementary(rna1, !rna1));
 }
 
@@ -141,29 +146,6 @@ TEST(TestCaseRNA, TestSumAssignOperator) {
     ASSERT_TRUE(rna1[10] == RNA::Nucleotide::C);
 }
 
-TEST(TestCaseRNA, TestTrimMethod) {
-    RNA rna1(1000, RNA::Nucleotide::A);
-    RNA rna2(1000, RNA:: Nucleotide::A);
-    rna1.trim(10);
-    ASSERT_TRUE(rna1.length() == 11);
-    ASSERT_TRUE(rna1.capacity() >= rna1.length() * 2 / 8);
-    ASSERT_TRUE(rna1[0] == RNA::Nucleotide::A);
-    ASSERT_TRUE(rna1[10] == RNA::Nucleotide::A);
-    EXPECT_TRUE(rna1.capacity() < rna2.capacity());
-}
-
-TEST(TestCaseRNA, TestSplitMethod) {
-    RNA rna1(5, RNA::Nucleotide::A);
-    rna1 += RNA(5, RNA::Nucleotide::G);
-    RNA rna2(rna1.split(6));
-    ASSERT_TRUE(rna1.length() == 6);
-    ASSERT_TRUE(rna2.length() == 4);
-    ASSERT_TRUE(rna1[4] == RNA::Nucleotide::A);
-    ASSERT_TRUE(rna1[5] == RNA::Nucleotide::G);
-    ASSERT_TRUE(rna2[0] == RNA::Nucleotide::G);
-    ASSERT_TRUE(rna1[3] == RNA::Nucleotide::G);
-}
-
 TEST(TestCaseRNA, TestCardinalityMethod) {
     RNA rna1(10, RNA::Nucleotide::A);
     rna1[3] = rna1[5] = RNA::Nucleotide::C;
@@ -178,4 +160,37 @@ TEST(TestCaseRNA, TestCardinalityMethod) {
     ASSERT_TRUE(map[RNA::Nucleotide::C] == 2);
     ASSERT_TRUE(map[RNA::Nucleotide::G] == 3);
     ASSERT_TRUE(map[RNA::Nucleotide::T] == 0);
+}
+
+TEST(TestCaseRNA, TestSplitMethod) {
+    RNA rna1(5, RNA::Nucleotide::A);
+    rna1 += RNA(5, RNA::Nucleotide::G);
+    RNA rna2(rna1.split(6));
+    ASSERT_TRUE(rna1.length() == 6);
+    ASSERT_TRUE(rna2.length() == 4);
+    ASSERT_TRUE(rna1[4] == RNA::Nucleotide::A);
+    ASSERT_TRUE(rna1[5] == RNA::Nucleotide::G);
+    ASSERT_TRUE(rna2[0] == RNA::Nucleotide::G);
+    ASSERT_TRUE(rna2[3] == RNA::Nucleotide::G);
+}
+
+TEST(TestCaseRNA, TestTrimMethod) {
+    RNA rna1(1000, RNA::Nucleotide::G);
+    RNA rna2(1000, RNA:: Nucleotide::G);
+    rna1.trim(10);
+    ASSERT_TRUE(rna1.length() == 11);
+    ASSERT_TRUE(rna1.capacity() >= rna1.length() / 4);
+    ASSERT_TRUE(rna1[0] == RNA::Nucleotide::G);
+    ASSERT_TRUE(rna1[10] == RNA::Nucleotide::G);
+    EXPECT_TRUE(rna1.capacity() < rna2.capacity());
+    std::size_t t = rna1.capacity();
+    rna1.trim(9);
+    EXPECT_TRUE(rna1.capacity() == t);
+}
+
+TEST(TestCaseRNA, TestReallocatingTime) {
+    RNA rna1(10, RNA::Nucleotide::A);
+    for (int i = 0; i < 10'000'000; ++i) {
+        rna1.add(RNA::Nucleotide::G);
+    }
 }
