@@ -94,10 +94,10 @@ void RNA::trim(std::size_t lastIndex) {
         return;
     }
     if (lastByteNum <= arrLength / allocRate) {
-        auto *t = new unsigned char[lastByteNum + 1];
-        std::copy(arr, arr + lastByteNum + 1, t);
+        auto *newArr = new unsigned char[lastByteNum + 1];
+        std::copy(arr, arr + lastByteNum + 1, newArr);
         delete[] arr;
-        arr = t;
+        arr = newArr;
         arrLength = lastByteNum + 1;
     }
     if (lastIndex < rnaLength) {
@@ -224,6 +224,7 @@ RNA::reference RNA::operator[](std::size_t index) {
             std::size_t newArrLength = arrLength * allocRate;
             arr = new unsigned char[newArrLength];
             std::copy(t, t + arrLength, arr);
+            delete[] t;
             arrLength = newArrLength;
         }
     }
