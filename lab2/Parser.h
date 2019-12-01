@@ -5,12 +5,11 @@
 #include <vector>
 
 class ParsingException: public std::exception {
-    size_t line = 0;
 public:
-    ParsingException(size_t lineNum) : std::exception(), line(lineNum) {}
+    ParsingException() : std::exception() {}
     ~ParsingException() override = default;
-    const char* what() const override {
-        return (std::to_string(line) + std::string(": wrong workflow description format in input file")).c_str();
+    const char* what() const noexcept override {
+        return "wrong workflow description format in input file";
     }
 };
 

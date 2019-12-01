@@ -6,8 +6,7 @@ class IOWorker : public Worker {
 protected:
     std::fstream file;
     std::string filename;
-    IOWorker(std::string filename, const std::vector<std::string> &in);
-    IOWorker(std::string filename) : IOWorker(std::move(filename), std::vector<std::string>()) {}
+    IOWorker(std::string filename, const std::vector<std::string> &in, std::fstream::openmode om);
     void LinesIntoString(std::string &str);
 public:
     ~IOWorker() override;

@@ -30,6 +30,7 @@ std::string ReadFile(std::ifstream &file, const std::string &filename) {
             while (!file.eof()) {
                 result += static_cast<char>(file.get());
             }
+            result.erase(result.end() - 1); // erase eof symbol
         }
     }
     catch(std::ifstream::failure &e) {
@@ -55,44 +56,44 @@ bool IsNumber(const std::string &str) {
 }
 
 void CheckAndClean(std::vector<std::vector<std::string>> &lines) {
-    if (lines.size() < 3) {
-        throw ParsingException(0);
+    if (lines.size() < 5) {
+        throw ParsingException();
     }
     // delete "desc"
     if (lines[0].size() != 1 || lines[0][0] != "desc") {
-        throw ParsingException(0);
+        throw ParsingException();
     }
     lines.erase(lines.begin());
     // delete '='
-    for (size_t i = 0; i < lines.size() - 2; ++i) {
-        if (!IsNumber(lines[i][0]) || lines[i][1] != "=" || (lines[i][3] != "dump" && lines[i][3] != "grep" &&
-                                                            lines[i][3] != "readfile" && lines[i][3] != "replace" &&
-                                                            lines[i][3] != "sort" && lines[i][3] != "writefile")
-                                                         || lines[i].size() > 5 || lines.size() < 3) {
-            throw ParsingException(i + 1);
+    for (size_t i = 0; i < lines.size() - 3; ++i) {
+        if (!IsNumber(lines[i][0]) || lines[i][1] != "=" || (lines[i][2] != "dump" && lines[i][2] != "grep" &&
+                                                            lines[i][2] != "readfile" && lines[i][2] != "replace" &&
+                                                            lines[i][2] != "sort" && lines[i][2] != "writefile")
+                                                         || lines[i].size() > 5 || lines[i].size() < 3) {
+            throw ParsingException();
         }
         lines[i].erase(lines[i].begin() + 1);
     }
     // delete csed
-    if (lines[lines.size() - 2].size() != 1 || lines[lines.size() - 2][0] != "csed") {
-        throw ParsingException(lines.size() - 1);
+    if (lines[lines.size() - 3].size() != 1 || lines[lines.size() - 3][0] != "csed") {
+        throw ParsingException();
     }
-    lines.erase(lines.end() - 2);
+    lines.erase(lines.end() - 3);
     // check lastLine
-    std::vector<std::string> &lastLine = lines[lines.size() - 1];
+    std::vector<std::string> &lastLine = lines[lines.size() - 2];
     if (lastLine.size() % 2 == 0) {
-        throw ParsingException(lines.size() + 1);
+        throw ParsingException();
     }
     for (size_t i = 0; i < lastLine.size(); i+=2) {
         if (!IsNumber(lastLine[i])) {
-            throw ParsingException(lines.size() + 1);
+            throw ParsingException();
         }
     }
     // delete ->
     if (lastLine.size() >= 3) {
-        for (size_t i = 1; i < lastLine.size(); i += 2) {
+        for (size_t i = 1; i < lastLine.size(); ++i) {
             if (lastLine[i] != "->") {
-                throw ParsingException(lines.size() - 1);
+                throw ParsingException();
             }
             lastLine.erase(lastLine.begin() + i);
         }

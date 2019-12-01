@@ -10,10 +10,10 @@ struct Block {
 
 void CastParsedVec(const std::vector<std::vector<std::string>> &parsedVec,
         std::unordered_multimap<size_t, Block> &desc, std::vector<size_t> &queue) {
-    for (size_t i = 0; i < parsedVec.size() - 1; ++i) {
+    for (size_t i = 0; i < parsedVec.size() - 2; ++i) {
         Block b;
         b.name = parsedVec[i][1];
-        if (parsedVec[i].size() == 3) {
+        if (parsedVec[i].size() >= 3) {
             b.firstParameter = parsedVec[i][2];
         }
         else {
@@ -27,7 +27,7 @@ void CastParsedVec(const std::vector<std::vector<std::string>> &parsedVec,
         }
         desc.insert(std::make_pair(stol(parsedVec[i][0]), b));
     }
-    for (const auto &i : parsedVec[parsedVec.size() - 1]) {
+    for (const auto &i : parsedVec[parsedVec.size() - 2]) {
         queue.push_back(std::stol(i));
     }
 }

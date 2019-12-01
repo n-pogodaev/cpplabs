@@ -5,12 +5,10 @@ void ParseStringToLines(std::string &&str, std::vector<std::string> &lines) {
     std::stringstream ssm(str);
     std::string nextLine;
     while (getline(ssm, nextLine)) {
-        nextLine += '\n'; // add '\n' in every line
         lines.push_back(std::move(nextLine));
         nextLine = "";
     }
     std::string &lastLine = lines[lines.size() - 1];
-    lastLine.erase(lastLine.end() - 1); // delete last '\n'
 }
 
 void Readfile::DoWork() {
@@ -21,6 +19,7 @@ void Readfile::DoWork() {
             while (!file.eof()) {
                 text += static_cast<char>(file.get());
             }
+            text.erase(text.end() - 1); // erase eof symbol
         }
     }
     catch(std::fstream::failure &e) {

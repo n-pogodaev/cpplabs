@@ -6,7 +6,7 @@ class ValidationException: public std::exception {
 public:
     ValidationException() : std::exception() {}
     ~ValidationException() override = default;
-    const char* what() const override {
+    const char* what() const noexcept override {
         return "workflow logic error";
     }
 };
