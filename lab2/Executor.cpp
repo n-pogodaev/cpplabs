@@ -33,8 +33,6 @@ void CastParsedVec(const std::vector<std::vector<std::string>> &parsedVec,
 }
 
 bool ValidateBlocksDescription(const std::unordered_multimap<size_t, Block> &desc) {
-    int wfCount = 0;
-    int rfCount = 0;
     for (const auto &b : desc) {
         if (desc.count(b.first) > 1) {
             return false;
@@ -49,28 +47,23 @@ bool ValidateBlocksDescription(const std::unordered_multimap<size_t, Block> &des
         if (b.second.name == "replace" && b.second.secParameter.empty()) {
             return false;
         }
-        if (b.second.name == "readfile") {
-            if (rfCount) {
-                return false;
-            }
-            ++rfCount;
-        }
-        if (b.second.name == "writefile") {
-            if (wfCount) {
-                return false;
-            }
-            ++wfCount;
-        }
     }
     return true;
 }
 
-bool ValidateExecQueue(const std::vector<size_t> &execQueue, const std::unordered_multimap<size_t, Block> &desc) {
+bool ValidateExecQueue(const std::vector<size_t> &execQueue, const std::unordered_multimap<size_t, Block> &desc,
+                        std::string &altIn, std::string &altOut) {
     if (!execQueue.empty()) {
         if (desc.count(execQueue[0]) != 1 || desc.count(execQueue[execQueue.size() - 1]) != 1 ||
-            desc.find(execQueue[0])->second.name != "readfile" ||
-            desc.find(execQueue[execQueue.size() - 1])->second.name != "writefile") {
+            (desc.find(execQueue[0])->second.name != "readfile" && altIn.empty()) ||
+            (desc.find(execQueue[execQueue.size() - 1])->second.name != "writefile" && altOut.empty())) {
             return false;
+        }
+        if (desc.find(execQueue[0])->second.name == "readfile") {
+            altIn = "";
+        }
+        if (desc.find(execQueue[execQueue.size() - 1])->second.name == "writefile") {
+            altOut = "";
         }
         for (size_t i = 1; i < execQueue.size() - 1; ++i) {
             if (desc.count(execQueue[i]) != 1 ||
@@ -83,8 +76,14 @@ bool ValidateExecQueue(const std::vector<size_t> &execQueue, const std::unordere
     return true;
 }
 
-void ExecBlocks(const std::unordered_multimap<size_t, Block> &desc, const std::vector<size_t> &queue) {
+void ExecBlocks(const std::unordered_multimap<size_t, Block> &desc, const std::vector<size_t> &queue,
+                const std::string &altIn, const std::string &altOut) {
     std::vector<std::string> boundLines;
+    if (!altIn.empty()) {
+        Readfile rf(altIn);
+        rf.DoWork();
+        boundLines = std::move(rf.GetLines());
+    }
     for(const auto &i : queue) {
         const Block b = desc.find(i)->second;
         std::string commandName = b.name;
@@ -111,6 +110,10 @@ void ExecBlocks(const std::unordered_multimap<size_t, Block> &desc, const std::v
         boundLines = std::move(block->GetLines());
         delete block;
     }
+    if (!altOut.empty()) {
+        Writefile wf(altOut, boundLines);
+        wf.DoWork();
+    }
 }
 
 void Executor::Execute() {
@@ -124,11 +127,13 @@ void Executor::Execute() {
     std::vector<size_t> execQueue;
     std::unordered_multimap<size_t, Block> desc;
     CastParsedVec(psr.GetParsedVec(), desc, execQueue);
-    if (!ValidateBlocksDescription(desc) || !ValidateExecQueue(execQueue, desc)) {
+    std::string in = altIn;
+    std::string out = altOut;
+    if (!ValidateBlocksDescription(desc) || !ValidateExecQueue(execQueue, desc, in, out)) {
         throw ValidationException();
     }
     try {
-        ExecBlocks(desc, execQueue);
+        ExecBlocks(desc, execQueue, in, out);
     }
     catch(std::fstream::failure &e) {
         throw;

@@ -13,9 +13,13 @@ public:
 
 class Executor {
     std::string filename = "in.txt";
+    std::string altIn = "";
+    std::string altOut = "";
 public:
     Executor() = default;
-    Executor(std::string fname) : filename(std::move(fname)) {}
+    Executor(std::string fname) : Executor(std::move(fname), "", "") {}
+    Executor(std::string fname, std::string in, std::string out) : filename(std::move(fname)),
+                                                                    altIn(std::move(in)) , altOut(std::move(out)) {}
     ~Executor() = default;
     void Execute();
 };
